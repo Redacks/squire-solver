@@ -69,16 +69,48 @@ def find_digit_positions(cell_frame):
     digit_width = 11
     digit_height = 16
     tolerance = 3
+    center_tolerance = 5
     positions = []
 
     for color in digit_colors:
         mask = np.all(cell_frame == color, axis=-1).astype(np.uint8)
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        for contour in contours:
-            x, y, w, h = cv2.boundingRect(contour)
-            if abs(w - digit_width) <= tolerance and abs(h - digit_height) <= tolerance:
-                positions.append((x, y, w, h))
+        combined_contours = []
+        used_contours = set()
+
+        for i, contour1 in enumerate(contours):
+            if i in used_contours:
+                continue
+            x1, y1, w1, h1 = cv2.boundingRect(contour1)
+            center_x1 = x1 + w1 // 2
+            for j, contour2 in enumerate(contours):
+                if i == j or j in used_contours:
+                    continue
+                x2, y2, w2, h2 = cv2.boundingRect(contour2)
+                center_x2 = x2 + w2 // 2
+                if abs(center_x1 - center_x2) <= center_tolerance and y2 > y1 and y2 - (y1 + h1) <= 10:
+                    combined_x = min(x1, x2)
+                    combined_y = min(y1, y2)
+                    combined_w = max(x1 + w1, x2 + w2) - combined_x
+                    combined_h = max(y1 + h1, y2 + h2) - combined_y
+
+                    if abs(combined_w - digit_width) <= tolerance and abs(combined_h - digit_height) <= tolerance:
+                        combined_contours.append((combined_x, combined_y, combined_w, combined_h))
+                        used_contours.add(i)
+                        used_contours.add(j)
+                        break
+
+        # Add combined contours
+        for cx, cy, cw, ch in combined_contours:
+            positions.append((cx, cy, cw, ch))
+
+        # Add individual contours that were not combined
+        for i, contour in enumerate(contours):
+            if i not in used_contours:
+                x_cont, y_cont, w_cont, h_cont = cv2.boundingRect(contour)
+                if abs(w_cont - digit_width) <= tolerance and abs(h_cont - digit_height) <= tolerance:
+                    positions.append((x_cont, y_cont, w_cont, h_cont))
 
     positions.sort(key=lambda x: x[0])  # Sort from left to right
     return positions
