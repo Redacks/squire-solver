@@ -59,32 +59,46 @@ def recognize_digit(digit_region):
         elif best_match.startswith("digit"):
             return best_match[5:]
         else:
-            return best_match #return the name of the file if it is not digit or unknown.
+            return best_match  # return the name of the file if it is not digit or unknown.
     else:
         return None
 
-def detect_digits(cell_frame):
-    """Detects digits and 'unknown' in a cell and returns the recognized values in correct order."""
-    digits_found = []
+def find_digit_positions(cell_frame):
+    """Detects digit and symbol positions in a cell and returns their bounding boxes."""
+    digit_colors = [np.array([220, 203, 192]), np.array([66, 203, 58])]
+    digit_width = 11
+    digit_height = 16
+    tolerance = 3
+    positions = []
 
     for color in digit_colors:
-        digit_mask = np.all(cell_frame == color, axis=-1)
-        digit_contours, _ = cv2.findContours(digit_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        mask = np.all(cell_frame == color, axis=-1).astype(np.uint8)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        for digit_contour in digit_contours:
-            dx, dy, dw, dh = cv2.boundingRect(digit_contour)
-            if abs(dw - digit_width) <= 3 and abs(dh - digit_height) <= 3:
-                digit_region = cell_frame[dy:dy + dh, dx:dx + dw].copy()
-                filtered_region = np.zeros_like(digit_region)
-                for digit_color in digit_colors:
-                    color_mask = np.all(digit_region == digit_color, axis=-1)
-                    filtered_region[color_mask] = digit_color
-                green_mask = np.all(filtered_region == digit_colors[1], axis=-1)
-                filtered_region[green_mask] = digit_colors[0]
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            if abs(w - digit_width) <= tolerance and abs(h - digit_height) <= tolerance:
+                positions.append((x, y, w, h))
 
-                recognized_digit = recognize_digit(filtered_region)
-                if recognized_digit is not None:
-                    digits_found.append((dx, str(recognized_digit)))
+    positions.sort(key=lambda x: x[0])  # Sort from left to right
+    return positions
 
-    digits_found.sort(key=lambda x: x[0])
+def detect_digits(cell_frame):
+    """Detects digits and 'unknown' in a cell and returns the recognized values in correct order."""
+    positions = find_digit_positions(cell_frame)
+    digits_found = []
+
+    for x, y, w, h in positions:
+        digit_region = cell_frame[y:y + h, x:x + w].copy()
+        filtered_region = np.zeros_like(digit_region)
+        for digit_color in digit_colors:
+            color_mask = np.all(digit_region == digit_color, axis=-1)
+            filtered_region[color_mask] = digit_color
+        green_mask = np.all(filtered_region == digit_colors[1], axis=-1)
+        filtered_region[green_mask] = digit_colors[0]
+
+        recognized_digit = recognize_digit(filtered_region)
+        if recognized_digit is not None:
+            digits_found.append((x, str(recognized_digit)))
+
     return "".join(digit[1] for digit in digits_found)
