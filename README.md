@@ -6,7 +6,7 @@ A Python project using OpenCV to automate gameplay of the game "Squire" by mvolu
 
 This project was created as a learning exercise to explore the capabilities of OpenCV (cv2) for screen scanning, image recognition, and automation. The primary goal was to see if a game could be played automatically by analyzing the screen and simulating user input, including button clicking. Additionally, this project served as an experiment to assess how effectively a large language model (like Gemini) could assist in code development.
 
-**Game:** Squire (https://mvolution.itch.io/squire) - A fun and engaging puzzle game developed by sulai under the name mvolution. Please check it out!
+**Game:** Squire (https://mvolution.itch.io/squire) - A fun and engaging puzzle game published by mvolution. Developed by Sulai, who works under the mvolution company name. Please check it out!
 
 **Disclaimer:** Much of the code in this project was generated or assisted by a large language model (Gemini). While efforts have been made to ensure accuracy and functionality, the code is provided "as is" without any guarantees.
 
