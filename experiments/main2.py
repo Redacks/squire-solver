@@ -15,7 +15,7 @@ y_offset, x_offset = 5, -1
 # Load digit templates (one per digit)
 digit_templates = {}
 for i in range(10):
-    filename = f"digit{i}.png"
+    filename = f"masks/digits/digit{i}.png"
     digit_img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     if digit_img is None:
         print(f"Error: Could not load {filename}")

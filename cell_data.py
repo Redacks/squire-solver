@@ -1,6 +1,6 @@
 # cell_data.py
-import cv2
-import numpy as np
+from digit_detector import detect_digits
+from field_detector import detect_field_type
 
 class Cell:
     def __init__(self, frame_area, cell_x, cell_y):
@@ -8,34 +8,15 @@ class Cell:
         self.cell_x = cell_x
         self.cell_y = cell_y
         self.value = None
-        self.item = None
+        self.field_type = None
 
     def detect_digit(self):
-        """Detects digit-like areas in the cell and updates the value."""
-        digit_colors = [np.array([192, 203, 220]), np.array([58, 203, 66])]
-        digit_width, digit_height = 11, 16
+        """Detects digits and updates the cell's value."""
+        self.value = detect_digits(self.frame_area)
 
-        frame = self.frame_area.copy()
-        digits_found = []
-
-        for color in digit_colors:
-            digit_mask = np.all(frame == color, axis=-1)
-            digit_contours, _ = cv2.findContours(digit_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            for digit_contour in digit_contours:
-                dx, dy, dw, dh = cv2.boundingRect(digit_contour)
-                if abs(dw - digit_width) <= 3 and abs(dh - digit_height) <= 3:
-                    digits_found.append((dx, dy, dw, dh))
-
-        if digits_found:
-            self.value = "Digit(s) detected"  # Basic indication, refine later
-        else:
-            self.value = None
-
-    def detect_item(self):
-        """Placeholder for item detection logic."""
-        # Replace with your actual item detection code
-        self.item = "Item detection not implemented"
+    def detect_field(self):
+        """Detects the field type and updates the cell's field_type."""
+        self.field_type = detect_field_type(self.frame_area)
 
 def get_cell_data(game_area, grid_x, grid_y, bottom_start, top_stop):
     """Returns a 2D array of Cell objects representing the grid."""
@@ -50,6 +31,7 @@ def get_cell_data(game_area, grid_x, grid_y, bottom_start, top_stop):
             x = int(x_cell * cell_width) + 1
             y = int(bottom_start + (y_cell - 1) * cell_height)
             cell_frame = game_area[y:int(y + cell_height), x:int(x + cell_width)]
-            row.append(Cell(cell_frame, x_cell, y_cell))
+            cell = Cell(cell_frame, x_cell, y_cell)
+            row.append(cell)
         grid.append(row)
     return grid
